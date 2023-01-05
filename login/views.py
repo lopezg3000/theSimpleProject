@@ -20,4 +20,4 @@ def get_name(request):
     else:
         form = NameForm()
 
-    return render(request, 'name.html', {'form': form})
+    return render(request, 'login/name.html', {'form': form})
