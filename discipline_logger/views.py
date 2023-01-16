@@ -1,3 +1,8 @@
-from django.shortcuts import render
+from django.shortcuts import get_object_or_404, render
 
-# Create your views here.
+from login.models import User
+
+
+def index(request, user_id):
+    user = get_object_or_404(User, pk=user_id)
+    return render(request, 'home/index.html', {'user': user})
