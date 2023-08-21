@@ -1,15 +1,20 @@
+# django imports
 import requests
 from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from django.contrib.auth import login
 
-from .serializers import UserSerializer, RegisterSerializer
 
 from rest_framework.response import Response
-from rest_framework import generics, permissions
+from rest_framework import generics, authentication, permissions
+from rest_framework.settings import api_settings
 from rest_framework.authtoken.serializers import AuthTokenSerializer
 
+from .serializers import UserSerializer, RegisterSerializer, AuthSerializer
+from rest_framework.authentication import SessionAuthentication
+
 from knox.models import AuthToken
+from knox.auth import TokenAuthentication
 from knox.views import LoginView as KnoxLoginView
 
 from .forms import RegisterForm
@@ -59,7 +64,8 @@ class RegisterAPI(generics.GenericAPIView):
 
 # Login API
 
-class LoginAPI(KnoxLoginView):
+class LoginView(KnoxLoginView):
+    serializer_class = AuthSerializer
     permission_classes = (permissions.AllowAny,)
 
     def post(self, request, format=None):
@@ -67,24 +73,26 @@ class LoginAPI(KnoxLoginView):
         serializer.is_valid(raise_exception=True)
         user = serializer.validated_data['user']
         login(request, user)
-        response = super(LoginAPI, self).post(request, format)
+        return super(LoginView, self).post(request, format=None)
 
-        token = response.data['token']
-        del response.data['token']
-        response.set_cookie(
-            'auth_token',
-            token,
-            httponly=True,
-            samesite='strict',
-        )
+        # response = super(LoginAPI, self).post(request, format)
 
-        return response
+        # token = response.data['token']
+        # del response.data['token']
+        # response.set_cookie(
+        #     'auth_token',
+        #     token,
+        #     httponly=True,
+        #     samesite='strict',
+        # )
+
+        # return response
 
 
 # Get User API
 class UserAPI(generics.RetrieveUpdateAPIView):
-    permission_classes = (permissions.IsAuthenticated,)
     serializer_class = UserSerializer
+    permission_classes = (permissions.IsAuthenticated,)
 
     def get_object(self):
         return self.request.user
